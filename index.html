@@ -192,7 +192,7 @@
           <input id="projectCount" type="number" min="1" max="20" step="1" value="1" />
         </div>
       </div>
-      <div class="footnote"><label for="precision">Точность отображения часов</label><select id="precision" style="max-width:320px"><option value="3" selected>До 3 знаков после запятой</option><option value="6">До 6 знаков после запятой</option><option value="full">Без округления отображения</option></select><p>Часы указаны десятичной дробью: 1,5 ч = 1 ч 30 мин; 40,8 ч = 40 ч 48 мин. Точность отображения не меняет расчёт. В режиме без округления показывается значение JavaScript; возможны длинные дробные хвосты.</p></div>
+      <div class="footnote"><label for="precision">Точность отображения часов</label><div class="actions"><select id="precision" style="max-width:260px"><option value="rounded" selected>Округлять</option><option value="full">Без округления</option></select><div id="precisionDigitsWrap"><label for="precisionDigits">Знаков после запятой</label><input id="precisionDigits" type="number" min="0" max="15" step="1" value="3" style="max-width:130px"></div></div><p>Часы указаны десятичной дробью: 1,5 ч = 1 ч 30 мин; 40,8 ч = 40 ч 48 мин. Точность отображения не меняет расчёт. В режиме без округления показывается значение JavaScript; возможны длинные дробные хвосты.</p></div>
       <div id="apiStatus" class="status"><span class="dot"></span><span>Календарь ещё не загружен.</span></div>
     </section>
 
@@ -252,7 +252,7 @@
     const $$ = (s, root=document) => [...root.querySelectorAll(s)];
     const fmt = {format(value) {
       const precision = $('#precision').value;
-      return precision === 'full' ? String(value).replace('.', ',') : new Intl.NumberFormat('ru-RU', {maximumFractionDigits:Number(precision)}).format(value);
+      return precision === 'full' ? String(value).replace('.', ',') : new Intl.NumberFormat('ru-RU', {maximumFractionDigits:Math.max(0, Math.min(15, Math.trunc(Number($('#precisionDigits').value) || 0)))}).format(value);
     }};
     const dateFmt = new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
     const weekdayFmt = new Intl.DateTimeFormat('ru-RU', { weekday: 'short' });
@@ -564,7 +564,9 @@
     $('#calcBtn').onclick = async () => { await loadCalendar(); calculate(); };
     $('#country').onchange = async () => { await loadCalendar(); calculate(); };
     $('#dayHours').oninput = () => calculate(false);
-    $('#precision').onchange = () => calculate(false);
+    $('#precision').onchange = () => { $('#precisionDigitsWrap').classList.toggle('hidden', $('#precision').value === 'full'); calculate(false); };
+    $('#precisionDigits').oninput = () => calculate(false);
+    $('#precisionDigits').onchange = () => { const input = $('#precisionDigits'); input.value = Math.max(0, Math.min(15, Math.trunc(Number(input.value) || 0))); calculate(false); };
     $('#toggleDetails').onclick = () => {
       const w = $('#detailsWrap'); w.classList.toggle('hidden');
       $('#toggleDetails').textContent = w.classList.contains('hidden') ? 'Показать детализацию' : 'Скрыть детализацию';
