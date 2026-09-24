@@ -268,7 +268,7 @@
     .developer-credit { flex-basis:100%; color:#525252; }
     .floating-bar { position:fixed; bottom:calc(16px + env(safe-area-inset-bottom,0px)); left:50%; transform:translateX(-50%); width:calc(100% - 32px); max-width:920px; z-index:30; display:flex; align-items:center; justify-content:space-between; gap:24px; padding:14px 18px; border:1px solid #dedede; border-radius:14px; background:rgba(255,255,255,.96); backdrop-filter:blur(16px); box-shadow:0 8px 32px #00000015; }
     .floating-info>span { font-size:11px; color:#737373; }
-    .floating-links { display:flex; flex-wrap:wrap; gap:16px; margin-top:7px; }
+    .floating-links { display:flex; flex-wrap:wrap; gap:16px; margin-top:0; }
     .floating-links a { color:#333; font-size:12px; text-decoration:none; }
     .floating-links a:hover { text-decoration:underline; }
     .floating-bar button { flex-shrink:0; padding:0 28px; }
@@ -389,7 +389,7 @@
     <footer class="site-footer"><span class="developer-credit">Разработчик — Алексей Титяев</span><span>Ваши расчёты остаются в браузере.</span><a href="https://t.me/linturaven" target="_blank" rel="noopener noreferrer">Есть идея или нашли ошибку? Напишите в Telegram ↗</a><a href="https://github.com/linturaven/worktimecalc">Репозиторий ↗</a><a href="timecalc-offline.zip" download>Скачать для работы без интернета ↓</a></footer>
   </main>
   <nav class="floating-bar" aria-label="Быстрые действия">
-    <div class="floating-info"><span>Ваши расчёты остаются в браузере.</span><div class="floating-links"><a href="https://t.me/linturaven" target="_blank" rel="noopener noreferrer" aria-label="Есть идея или нашли ошибку? Напишите в Telegram">Telegram ↗</a><a href="https://github.com/linturaven/worktimecalc">Репозиторий ↗</a><a href="timecalc-offline.zip" download>Скачать офлайн ↓</a></div></div>
+    <div class="floating-info"><div class="floating-links"><a href="https://t.me/linturaven" target="_blank" rel="noopener noreferrer" aria-label="Есть идея или нашли ошибку? Напишите в Telegram">Telegram ↗</a><a href="https://github.com/linturaven/worktimecalc">Репозиторий ↗</a><a href="timecalc-offline.zip" download>Скачать офлайн ↓</a></div></div>
     <button id="floatingCalcBtn" type="button">Рассчитать</button>
   </nav>
 
