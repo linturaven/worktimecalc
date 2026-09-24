@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Времячко — рабочие часы по проектам</title>
   <meta name="description" content="Рассчитайте часы по проектам: выберите месяцы, укажите загрузку и отсутствия. Все расчёты — в вашем браузере.">
-  <link rel="icon" type="image/png" href="assets/timecalc-logo.png">
+  <link rel="icon" type="image/png" href="assets/timecalc-logo-front.png">
   <style>
     :root {
       --bg: #f5f6f8;
@@ -259,17 +259,42 @@
     .calculate-action { display:flex; justify-content:flex-end; margin:24px 0 16px; }
     .calculate-action button { min-width:180px; }
     @media(max-width:600px) { .calculate-action button { width:100%; } }
+    .wrap { padding-bottom:150px; }
+    .hero { padding-top:40px; gap:48px; }
+    .hero-logo { display:block; width:96px; height:96px; object-fit:contain; margin:0 0 18px; }
+    .hero h1 { font-size:clamp(46px,6vw,76px); margin-bottom:20px; }
+    .work-cat { width:320px; margin:0; }
+    .work-cat img { width:100%; border-radius:14px; }
+    .developer-credit { flex-basis:100%; color:#525252; }
+    .floating-bar { position:fixed; bottom:calc(16px + env(safe-area-inset-bottom,0px)); left:50%; transform:translateX(-50%); width:calc(100% - 32px); max-width:920px; z-index:30; display:flex; align-items:center; justify-content:space-between; gap:24px; padding:14px 18px; border:1px solid #dedede; border-radius:14px; background:rgba(255,255,255,.96); backdrop-filter:blur(16px); box-shadow:0 8px 32px #00000015; }
+    .floating-info>span { font-size:11px; color:#737373; }
+    .floating-links { display:flex; flex-wrap:wrap; gap:16px; margin-top:7px; }
+    .floating-links a { color:#333; font-size:12px; text-decoration:none; }
+    .floating-links a:hover { text-decoration:underline; }
+    .floating-bar button { flex-shrink:0; padding:0 28px; }
+    @media(max-width:760px) { .hero { gap:24px; } .work-cat { width:240px; } }
+    @media(max-width:600px) {
+      .hero-logo { width:80px; height:80px; margin-bottom:14px; }
+      .hero h1 { font-size:48px; }
+      .work-cat { width:260px; max-width:100%; margin:24px auto 0; }
+      .work-cat img { width:100%; }
+      .wrap { padding-bottom:190px; }
+      .floating-bar { width:calc(100% - 20px); bottom:calc(10px + env(safe-area-inset-bottom,0px)); padding:12px; gap:12px; flex-wrap:wrap; }
+      .floating-info { width:100%; }
+      .floating-links { justify-content:space-between; gap:8px; }
+      .floating-links a { font-size:11px; }
+      .floating-bar button { width:100%; }
+    }
   </style>
 </head>
 <body>
-  <header class="topbar"><div class="topbar-inner"><div class="brand"><img src="assets/timecalc-logo.png" width="42" height="42" alt="">Времячко</div><a href="https://github.com/linturaven/worktimecalc">GitHub ↗</a></div></header>
   <main class="wrap">
     <section class="hero">
       <div>
-        <span class="eyebrow">Калькулятор рабочего времени</span><h1>Вы работаете.<br>Мы считаем часы.</h1>
+        <img class="hero-logo" src="assets/timecalc-logo-front.png" width="96" height="96" alt="Логотип Времячка — объёмные часы"><span class="eyebrow">Калькулятор рабочего времени</span><h1>Времячко</h1>
         <p>Выберите месяцы, добавьте проекты и укажите загрузку. Учтём выходные и отсутствия — останется перенести часы в отчёт.</p>
       </div>
-      <figure class="work-cat"><img src="assets/work.gif" width="180" height="181" alt="Кот усердно работает за ноутбуком"></figure>
+      <figure class="work-cat"><img src="assets/work.gif" width="320" height="323" alt="Кот усердно работает за ноутбуком"></figure>
     </section>
 
     <section class="panel">
@@ -361,8 +386,12 @@
         </table>
       </div>
     </section>
-    <footer class="site-footer"><span>Ваши расчёты остаются в браузере.</span><a href="https://t.me/linturaven" target="_blank" rel="noopener noreferrer">Есть идея или нашли ошибку? Напишите в Telegram ↗</a><a href="https://github.com/linturaven/worktimecalc">Репозиторий ↗</a><a href="timecalc-offline.zip" download>Скачать для работы без интернета ↓</a></footer>
+    <footer class="site-footer"><span class="developer-credit">Разработчик — Алексей Титяев</span><span>Ваши расчёты остаются в браузере.</span><a href="https://t.me/linturaven" target="_blank" rel="noopener noreferrer">Есть идея или нашли ошибку? Напишите в Telegram ↗</a><a href="https://github.com/linturaven/worktimecalc">Репозиторий ↗</a><a href="timecalc-offline.zip" download>Скачать для работы без интернета ↓</a></footer>
   </main>
+  <nav class="floating-bar" aria-label="Быстрые действия">
+    <div class="floating-info"><span>Ваши расчёты остаются в браузере.</span><div class="floating-links"><a href="https://t.me/linturaven" target="_blank" rel="noopener noreferrer" aria-label="Есть идея или нашли ошибку? Напишите в Telegram">Telegram ↗</a><a href="https://github.com/linturaven/worktimecalc">Репозиторий ↗</a><a href="timecalc-offline.zip" download>Скачать офлайн ↓</a></div></div>
+    <button id="floatingCalcBtn" type="button">Рассчитать</button>
+  </nav>
 
   <script>
     const $ = (s, root=document) => root.querySelector(s);
@@ -720,7 +749,16 @@
     };
     $('#projectCount').onchange = e => { setProjectCount(e.target.value); calculate(false); };
     $('#addAbsence').onclick = () => { $('#absences').insertAdjacentHTML('beforeend', absenceTemplate()); bindRowEvents(); calculate(false); };
-    $('#calcBtn').onclick = async () => { await loadCalendar(); calculate(); };
+    async function runCalculation() {
+      $('#calcBtn').disabled = true; $('#floatingCalcBtn').disabled = true;
+      try { await loadCalendar(); calculate(); }
+      finally { $('#calcBtn').disabled = false; $('#floatingCalcBtn').disabled = false; }
+    }
+    $('#calcBtn').onclick = runCalculation;
+    $('#floatingCalcBtn').onclick = async () => {
+      await runCalculation();
+      $('#projectTotals').closest('.panel').scrollIntoView({behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'start'});
+    };
     $('#country').onchange = async () => { await loadCalendar(); calculate(); };
     $('#dayHours').oninput = () => calculate(false);
     $('#precision').onchange = () => { $('#precisionDigitsWrap').classList.toggle('hidden', $('#precision').value === 'full'); calculate(false); };
