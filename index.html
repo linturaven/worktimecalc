@@ -269,7 +269,7 @@
         <span class="eyebrow">Калькулятор рабочего времени</span><h1>Вы работаете.<br>Мы считаем часы.</h1>
         <p>Выберите месяцы, добавьте проекты и укажите загрузку. Учтём выходные и отсутствия — останется перенести часы в отчёт.</p>
       </div>
-      <figure class="work-cat"><img src="assets/work.gif" width="180" height="181" alt="Кот усердно работает за ноутбуком"><figcaption>Он уже работает. А вы не забудьте про перерыв.</figcaption><button id="toggleCat" class="secondary" type="button">Скрыть кота</button></figure>
+      <figure class="work-cat"><img src="assets/work.gif" width="180" height="181" alt="Кот усердно работает за ноутбуком"></figure>
     </section>
 
     <section class="panel">
@@ -732,11 +732,6 @@
     };
     $('#downloadCsv').onclick = downloadCsv;
 
-    $('#toggleCat').onclick = () => {
-      const cat = $('.work-cat img'); cat.hidden = !cat.hidden;
-      cat.style.display = cat.hidden ? 'none' : 'block';
-      $('#toggleCat').textContent = cat.hidden ? 'Показать кота' : 'Скрыть кота';
-    };
     $('#resetSettings').onclick = () => {
       settingsReady = false;
       try { localStorage.removeItem(settingsKey); } catch (_) {}
