@@ -3,7 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Калькулятор трекинга рабочего времени</title>
+  <title>timecalc — рабочие часы по проектам</title>
+  <meta name="description" content="Рассчитайте часы по проектам: выберите месяцы, укажите загрузку и отсутствия. Все расчёты — в вашем браузере.">
+  <link rel="icon" type="image/png" href="assets/timecalc-logo.png">
   <style>
     :root {
       --bg: #f5f6f8;
@@ -147,21 +149,129 @@
       .project-row > *, .absence-row > *, .project-row .remove { grid-column: 1 !important; }
       .remove { width: 100%; }
     }
+    :root { --bg:#fafafa; --panel:#fff; --text:#171717; --muted:#666; --line:#eaeaea; --accent:#171717; --accent-soft:#f2f2f2; --shadow:none; --radius:10px; }
+    body { -webkit-font-smoothing:antialiased; }
+    .topbar { height:64px; border-bottom:1px solid var(--line); background:#fff; }
+    .topbar-inner { max-width:1200px; height:100%; margin:auto; padding:0 24px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
+    .brand { display:flex; gap:10px; align-items:center; font-size:17px; font-weight:650; letter-spacing:-.6px; }
+    .brand-mark { width:24px; height:24px; display:grid; grid-template-columns:repeat(3,5px); gap:3px; align-items:end; }
+    .brand-mark i { display:block; background:#171717; border-radius:1px; height:12px; }
+    .brand-mark i:nth-child(2) { height:22px; } .brand-mark i:nth-child(3) { height:17px; }
+    .topbar a { font-size:13px; color:var(--muted); text-decoration:none; } .topbar a:hover { color:#000; }
+    .wrap { max-width:1200px; padding:0 24px 64px; border-left:1px solid var(--line); border-right:1px solid var(--line); }
+    .hero { padding:52px 0 40px; margin:0 0 28px; border-bottom:1px solid var(--line); align-items:center; }
+    .eyebrow { display:block; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:11px; letter-spacing:.1em; color:#777; margin-bottom:16px; text-transform:uppercase; }
+    .hero h1 { font-size:clamp(30px,4.2vw,48px); line-height:1.12; font-weight:650; letter-spacing:-.055em; max-width:700px; margin-bottom:16px; }
+    .hero p { font-size:15px; line-height:1.65; max-width:610px; }
+    .hero button { flex-shrink:0; padding:0 22px; }
+    .panel { padding:24px; border-radius:10px; margin-bottom:20px; }
+    .panel h2 { font-size:16px; font-weight:600; letter-spacing:-.025em; }
+    .panel-head { margin-bottom:20px; flex-wrap:wrap; }
+    label,.mini-label { text-transform:none; letter-spacing:0; font-weight:500; font-size:12px; color:#525252; }
+    input,select { border-color:#dedede; border-radius:6px; height:40px; font-size:14px; box-shadow:0 1px 2px #00000004; }
+    input:hover,select:hover { border-color:#b5b5b5; }
+    input:focus,select:focus { border-color:#888; box-shadow:0 0 0 3px #0000000b; }
+    button { height:40px; font-size:13px; font-weight:550; border-radius:6px; background:#171717; transition:background .15s,border-color .15s; }
+    button:hover { background:#333; }
+    button.secondary { background:#fff; border-color:#dedede; color:#171717; }
+    button.secondary:hover { background:#f5f5f5; border-color:#bbb; }
+    button:disabled { cursor:default; opacity:.55; }
+    button:focus-visible { outline:2px solid #777; outline-offset:3px; }
+    .period-picker { padding:20px; background:#fafafa; border-radius:8px; }
+    .year-nav strong { min-width:48px; text-align:center; font-size:15px; font-variant-numeric:tabular-nums; }
+    .year-nav button { width:34px; height:34px; padding:0; }
+    .month-grid { gap:6px; margin-top:20px; }
+    .month-grid button { height:44px; font-size:13px; border-color:#e5e5e5; }
+    .month-grid button:hover { background:#ededed; }
+    .month-grid button[aria-pressed="true"] { background:#171717; border-color:#171717; color:#fff; }
+    .selected-months button { background:#fff; border:1px solid #dedede; color:#444; font-size:11px; height:28px; }
+    .selected-months button:disabled { opacity:1; }
+    .footnote { font-size:12px; line-height:1.6; color:#737373; }
+    .precision-settings { border-top:1px solid var(--line); padding-top:18px; margin-top:20px; }
+    .precision-settings .actions { align-items:end; }
+    .precision-settings p { max-width:760px; margin-bottom:0; }
+    .status { font-size:12px; border:1px solid #e5e5e5; background:#fafafa; color:#555; border-radius:6px; }
+    .status.good { color:#25633e; background:#f6fbf7; border-color:#e0eee4; }
+    .status.warn { color:#925c0c; background:#fffcf5; border-color:#f1e6cf; }
+    .project-row,.absence-row { background:#fff; border-radius:7px; padding:16px; gap:12px; }
+    .remove { width:40px; color:#888; border-color:#e5e5e5; }
+    .remove:hover { background:#fff5f5; }
+    .check-wrap { border-radius:6px; height:40px; border-color:#dedede; }
+    .check-wrap span { font-size:12px; } input[type=checkbox] { accent-color:#171717; }
+    #absences:empty { border:1px dashed #ddd; padding:26px 16px; border-radius:7px; text-align:center; }
+    #absences:empty::after { content:'Отсутствий нет. Все рабочие часы доступны для проектов.'; color:#888; font-size:13px; }
+    .summary { gap:0; border:1px solid var(--line); background:#fff; border-radius:10px; overflow:hidden; margin:28px 0; }
+    .card { border:0; border-right:1px solid var(--line); border-radius:0; padding:22px 18px; min-width:0; }
+    .card:last-child { border-right:0; background:#fafafa; }
+    .card .k { text-transform:none; font-size:12px; letter-spacing:0; font-weight:500; }
+    .card .v { font-size:clamp(24px,3vw,36px); font-weight:600; letter-spacing:-.05em; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+    .card .s { font-size:11px; line-height:1.5; }
+    .table-wrap { border-radius:7px; }
+    th { background:#fafafa; font-weight:500; font-size:11px; text-transform:none; letter-spacing:0; }
+    td { font-size:13px; } th,td { padding:13px 16px; }
+    tbody tr:hover { background:#fafafa; }
+    .num { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:12px; }
+    .badge { border-radius:4px; font-size:10px; padding:3px 6px; }
+    .pct-good { color:#35704a; font-weight:500; } .pct-bad { font-weight:600; }
+    .site-footer { display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; padding-top:16px; color:#888; font-size:11px; }
+    .site-footer a { color:#666; text-decoration:none; }
+    @media(max-width:900px) { .card { border-bottom:1px solid var(--line); } .card:nth-child(2n) { border-right:0; } .card:last-child { grid-column:span 2; border-bottom:0; } }
+    @media(max-width:600px) {
+      .topbar-inner { padding:0 16px; } .topbar { height:56px; }
+      .wrap { padding:0 14px 36px; border:0; }
+      .hero { padding:32px 4px 28px; margin-bottom:20px; }
+      .hero h1 { font-size:34px; } .hero p { font-size:14px; }
+      .hero button { margin-top:20px; width:100%; }
+      .panel { padding:16px; } .period-picker { padding:12px; }
+      .picker-toolbar { gap:14px; } .picker-toolbar>div:first-child { flex-basis:100%; } .picker-toolbar select { width:100%; }
+      .month-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+      .month-grid button { padding:0 5px; font-size:12px; }
+      .panel-head { align-items:flex-start; gap:12px; }
+      .panel-head .actions { width:100%; } .panel-head .actions button { flex:1; padding:0 10px; }
+      .project-row,.absence-row { padding:12px; } .remove { width:100%; }
+      .card { padding:18px 14px; } .card .v { font-size:30px; }
+      input,select { font-size:16px; }
+    }
+
+    .work-cat { margin:0 0 0 28px; width:180px; flex-shrink:0; text-align:center; }
+    .work-cat img { display:block; width:180px; height:auto; border-radius:10px; filter:saturate(.8); }
+    .work-cat figcaption { margin-top:8px; color:#777; font-size:11px; line-height:1.5; }
+    .work-cat button { margin-top:8px; height:28px; font-size:11px; width:auto; }
+    @media(max-width:600px) { .work-cat { margin:24px auto 0; width:150px; } .work-cat img { width:150px; } .work-cat button { width:auto; margin-top:8px; } }
+    @media(prefers-reduced-motion:reduce) { .work-cat img { display:none; } }
+    .period-picker { position:relative; width:320px; max-width:100%; padding:0; background:#fff; border:1px solid #dedede; border-radius:6px; margin-bottom:20px; }
+    .period-picker summary { list-style:none; padding:11px 38px 11px 13px; font-size:14px; cursor:pointer; }
+    .period-picker summary::-webkit-details-marker { display:none; }
+    .period-picker summary::after { content:'⌄'; position:absolute; right:14px; top:10px; color:#888; }
+    .period-picker[open] summary { background:#fafafa; border-radius:6px; }
+    .picker-popover { position:absolute; top:calc(100% + 8px); left:0; width:320px; max-width:calc(100vw - 62px); z-index:20; border:1px solid #e5e5e5; background:white; padding:16px; border-radius:10px; box-shadow:0 12px 40px #00000018; }
+    .picker-toolbar { gap:12px; }
+    .picker-toolbar>div:first-child { flex-basis:100%; }
+    .picker-toolbar select { width:100%; }
+    .picker-toolbar label { display:none; }
+    .picker-toolbar #currentMonth { padding:0 9px; font-size:11px; height:34px; }
+    .month-grid { grid-template-columns:repeat(3,minmax(0,1fr)); margin-top:14px; }
+    .month-grid button { font-size:12px; padding:0 4px; height:36px; }
+    .selected-months { max-height:86px; overflow-y:auto; }
+    .picker-done { width:100%; margin-top:12px; }
+    #periodHint { font-size:11px; line-height:1.5; }
+    @media(max-width:600px) { .period-picker { width:100%; padding:0; } .picker-popover { padding:12px; } }
   </style>
 </head>
 <body>
+  <header class="topbar"><div class="topbar-inner"><div class="brand"><img src="assets/timecalc-logo.png" width="42" height="42" alt="">timecalc</div><a href="https://github.com/linturaven/worktimecalc">GitHub ↗</a></div></header>
   <main class="wrap">
     <section class="hero">
       <div>
-        <h1>Рабочие часы по проектам</h1>
-        <p>Производственный календарь + проценты загрузки + периоды проектов + неоплачиваемые отсутствия. Расчёт идёт отдельно по каждому дню.</p>
+        <span class="eyebrow">Калькулятор рабочего времени</span><h1>Вы работаете.<br>Мы считаем часы.</h1>
+        <p>Выберите месяцы, добавьте проекты и укажите загрузку. Учтём выходные и отсутствия — останется перенести часы в отчёт.</p>
       </div>
-      <button id="calcBtn">Рассчитать</button>
+      <figure class="work-cat"><img src="assets/work.gif" width="180" height="181" alt="Кот усердно работает за ноутбуком"><figcaption>Он уже работает. А вы не забудьте про перерыв.</figcaption><button id="toggleCat" class="secondary" type="button">Скрыть кота</button></figure>
     </section>
 
     <section class="panel">
-      <h2>Период и календарь</h2>
-      <div class="period-picker">
+      <div class="panel-head"><h2>За какой период считаем</h2><div class="actions"><button id="resetSettings" class="secondary">Сбросить настройки</button><button id="calcBtn">Рассчитать</button></div></div><p id="settingsStatus" class="footnote" role="status">Настройки сохраняются в этом браузере.</p>
+      <details class="period-picker" id="periodPicker"><summary id="periodSummary">Выбрать период</summary><div class="picker-popover">
         <div class="picker-toolbar">
           <div><label for="periodMode">Период расчёта</label><select id="periodMode"><option value="single">Один месяц</option><option value="multiple">Несколько месяцев</option></select></div>
           <div class="year-nav"><button id="prevYear" class="secondary" aria-label="Предыдущий год">←</button><strong id="pickerYear"></strong><button id="nextYear" class="secondary" aria-label="Следующий год">→</button></div>
@@ -170,7 +280,8 @@
         <div id="monthGrid" class="month-grid" role="group" aria-label="Выбор месяцев"></div>
         <div id="selectedMonths" class="selected-months" aria-live="polite"></div>
         <div id="periodHint" class="footnote"></div>
-      </div>
+        <button id="closePicker" class="picker-done">Готово</button>
+      </div></details>
       <div class="grid">
         <div class="field">
           <label for="country">Производственный календарь</label>
@@ -184,7 +295,7 @@
           </select>
         </div>
         <div class="field">
-          <label for="dayHours">Обычный рабочий день, ч</label>
+          <label for="dayHours">Рабочий день, часов</label>
           <input id="dayHours" type="number" min="1" max="24" step="0.25" value="8" />
         </div>
         <div class="field">
@@ -192,8 +303,8 @@
           <input id="projectCount" type="number" min="1" max="20" step="1" value="1" />
         </div>
       </div>
-      <div class="footnote"><label for="precision">Точность отображения часов</label><div class="actions"><select id="precision" style="max-width:260px"><option value="rounded" selected>Округлять</option><option value="full">Без округления</option></select><div id="precisionDigitsWrap"><label for="precisionDigits">Знаков после запятой</label><input id="precisionDigits" type="number" min="0" max="15" step="1" value="3" style="max-width:130px"></div></div><p>Часы указаны десятичной дробью: 1,5 ч = 1 ч 30 мин; 40,8 ч = 40 ч 48 мин. Точность отображения не меняет расчёт. В режиме без округления показывается значение JavaScript; возможны длинные дробные хвосты.</p></div>
-      <div id="apiStatus" class="status"><span class="dot"></span><span>Календарь ещё не загружен.</span></div>
+      <div class="footnote precision-settings"><label for="precision">Точность отображения часов</label><div class="actions"><select id="precision" style="max-width:260px"><option value="rounded" selected>Округлять</option><option value="full">Без округления</option></select><div id="precisionDigitsWrap"><label for="precisionDigits">Знаков после запятой</label><input id="precisionDigits" type="number" min="0" max="15" step="1" value="3" style="max-width:130px"></div></div><p>Часы указаны десятичной дробью: 1,5 ч = 1 ч 30 мин; 40,8 ч = 40 ч 48 мин. Округление меняет только отображение, а не расчёт.</p></div>
+      <div id="apiStatus" class="status"><span class="dot"></span><span>Сейчас загрузим календарь.</span></div>
     </section>
 
     <section class="panel">
@@ -202,7 +313,7 @@
         <button id="addProject" class="secondary">+ Проект</button>
       </div>
       <div id="projects" class="rows"></div>
-      <div class="footnote">Процент считается от доступных рабочих часов конкретного дня. Если сумма активных проектов в день меньше или больше 100%, это будет видно в детализации.</div>
+      <div class="footnote">Укажите, какую часть рабочего дня занимает каждый проект. Если сумма не равна 100%, подсветим это в таблице по дням.</div>
     </section>
 
     <section class="panel">
@@ -211,7 +322,7 @@
         <button id="addAbsence" class="secondary">+ Отсутствие</button>
       </div>
       <div id="absences" class="rows"></div>
-      <div class="footnote">Для полного дня вычитается фактическая норма этого дня. Для частичного отсутствия можно задать фиксированное число часов в день.</div>
+      <div class="footnote">Не работали весь день? Отметьте полный день. Отсутствовали несколько часов? Снимите отметку и укажите, сколько часов вычесть за каждый день.</div>
     </section>
 
     <section id="summary" class="summary"></section>
@@ -222,7 +333,7 @@
         <table>
           <thead>
             <tr>
-              <th>Проект</th><th class="num">%</th><th>Период</th><th class="num">Раб. дней</th><th class="num">Доступно в периоде</th><th class="num">Затрекать</th>
+              <th>Проект</th><th class="num">%</th><th>Период</th><th class="num">Раб. дней</th><th class="num">Доступно в периоде</th><th class="num">Часов по проекту</th>
             </tr>
           </thead>
           <tbody id="projectTotals"></tbody>
@@ -232,10 +343,10 @@
 
     <section class="panel">
       <div class="panel-head">
-        <h2>Детализация по дням</h2>
+        <h2>Часы по дням</h2>
         <div class="actions">
-          <button id="toggleDetails" class="secondary">Скрыть детализацию</button>
-          <button id="downloadCsv" class="secondary">Скачать CSV</button>
+          <button id="toggleDetails" class="secondary">Скрыть дни</button>
+          <button id="downloadCsv" class="secondary">Скачать таблицу</button>
         </div>
       </div>
       <div id="detailsWrap" class="table-wrap">
@@ -245,6 +356,7 @@
         </table>
       </div>
     </section>
+    <footer class="site-footer"><span>Ваши расчёты остаются в браузере.</span><a href="https://t.me/linturaven" target="_blank" rel="noopener noreferrer">Есть идея или нашли ошибку? Напишите в Telegram ↗</a><a href="https://github.com/linturaven/worktimecalc#readme">Как это работает ↗</a></footer>
   </main>
 
   <script>
@@ -258,6 +370,37 @@
     const weekdayFmt = new Intl.DateTimeFormat('ru-RU', { weekday: 'short' });
 
     const state = { calendar: [], source: '', lastRows: [] };
+    const settingsKey = 'timecalc:settings:v1';
+    let settingsReady = false;
+    function saveSettings() {
+      if (!settingsReady) return;
+      try {
+        localStorage.setItem(settingsKey, JSON.stringify({
+          months:selectedMonths, mode:$('#periodMode').value, country:$('#country').value,
+          dayHours:$('#dayHours').value, precision:$('#precision').value, digits:$('#precisionDigits').value,
+          projects:getProjects(), absences:getAbsences()
+        }));
+        $('#settingsStatus').textContent = 'Сохранено в этом браузере. Можно закрыть вкладку и вернуться позже.';
+      } catch (_) { $('#settingsStatus').textContent = 'Браузер не даёт сохранить настройки. Расчёт работает, но после закрытия вкладки данные могут потеряться.'; }
+    }
+    function restoreSettings() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(settingsKey));
+        if (!saved || !Array.isArray(saved.months) || !saved.months.length || !saved.months.every(m => /^\d{4}-(0[1-9]|1[0-2])$/.test(m)) || !Array.isArray(saved.projects)) return false;
+        selectedMonths = [...new Set(saved.months)].sort().slice(0,24);
+        pickerYear = Number(selectedMonths[0].slice(0,4));
+        $('#periodMode').value = selectedMonths.length > 1 || saved.mode === 'multiple' ? 'multiple' : 'single';
+        if (['ru','by','kz','uz','tr','lv'].includes(saved.country)) $('#country').value = saved.country;
+        $('#dayHours').value = clamp(Number(saved.dayHours)||8,1,24);
+        $('#precision').value = saved.precision === 'full' ? 'full' : 'rounded';
+        $('#precisionDigits').value = clamp(Math.trunc(Number(saved.digits) || 0),0,15);
+        const validDate = value => /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : '';
+        $('#projects').innerHTML = saved.projects.slice(0,20).map((p,i) => projectTemplate(i,{name:String(p.name||''),pct:clamp(Number(p.pct)||0,0,500),from:validDate(p.from),to:validDate(p.to)})).join('');
+        $('#projectCount').value = Math.min(saved.projects.length,20);
+        $('#absences').innerHTML = (Array.isArray(saved.absences) ? saved.absences : []).slice(0,200).map(a => absenceTemplate({from:validDate(a.from),to:validDate(a.to),full:!!a.full,hours:clamp(Number(a.hours)||0,0,24)})).join('');
+        return true;
+      } catch (_) { return false; }
+    }
     const today = new Date();
     let selectedMonths = [`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`];
     let pickerYear = today.getFullYear();
@@ -269,6 +412,8 @@
     }
     function renderPicker() {
       $('#pickerYear').textContent = pickerYear;
+      const monthLabel = key => `${monthNames[Number(key.slice(5))-1]} ${key.slice(0,4)}`;
+      $('#periodSummary').textContent = selectedMonths.length === 1 ? monthLabel(selectedMonths[0]) : `${monthLabel(selectedMonths[0])} + ещё ${selectedMonths.length-1}`;
       $('#monthGrid').innerHTML = monthNames.map((name,i) => {
         const key = `${pickerYear}-${String(i+1).padStart(2,'0')}`;
         return `<button data-month="${key}" aria-pressed="${selectedMonths.includes(key)}">${name}</button>`;
@@ -291,15 +436,19 @@
     $('#monthGrid').onclick = event => {
       const key = event.target.closest('[data-month]')?.dataset.month;
       if (!key) return;
+      if ($('#periodMode').value === 'single') $('#periodPicker').open = false;
       selectMonths($('#periodMode').value === 'single' ? [key] : selectedMonths.includes(key) ? selectedMonths.filter(x => x !== key) : [...selectedMonths,key]);
     };
+    $('#closePicker').onclick = () => { $('#periodPicker').open = false; };
+    document.addEventListener('click', event => { if (!$('#periodPicker').contains(event.target)) $('#periodPicker').open = false; });
+    document.addEventListener('keydown', event => { if (event.key === 'Escape') { $('#periodPicker').open = false; $('#periodSummary').focus(); } });
     $('#selectedMonths').onclick = event => {
       const key = event.target.closest('[data-remove-month]')?.dataset.removeMonth;
       if (key) selectMonths(selectedMonths.filter(x => x !== key));
     };
     $('#prevYear').onclick = () => { pickerYear = Math.max(1900, pickerYear-1); renderPicker(); };
     $('#nextYear').onclick = () => { pickerYear = Math.min(2100, pickerYear+1); renderPicker(); };
-    $('#periodMode').onchange = () => { if ($('#periodMode').value === 'single') selectMonths([selectedMonths[0]]); else renderPicker(); };
+    $('#periodMode').onchange = () => { if ($('#periodMode').value === 'single') selectMonths([selectedMonths[0]]); else { renderPicker(); saveSettings(); } };
     $('#currentMonth').onclick = () => {
       const now = new Date(); pickerYear = now.getFullYear();
       const key = `${pickerYear}-${String(now.getMonth()+1).padStart(2,'0')}`;
@@ -343,7 +492,7 @@
           <div><div class="mini-label">С</div><input class="a-from" type="date" value="${data.from ?? fallback}" /></div>
           <div><div class="mini-label">По</div><input class="a-to" type="date" value="${data.to ?? fallback}" /></div>
           <div><div class="mini-label">Тип</div><label class="check-wrap"><input class="a-full" type="checkbox" ${full?'checked':''}><span>Полный рабочий день</span></label></div>
-          <div><div class="mini-label">Часов/день</div><input class="a-hours" type="number" min="0" max="24" step="0.25" value="${data.hours ?? 8}" ${full?'disabled':''} /></div>
+          <div><div class="mini-label">Часов в день</div><input class="a-hours" type="number" min="0" max="24" step="0.25" value="${data.hours ?? 8}" ${full?'disabled':''} /></div>
           <button class="remove" title="Удалить" aria-label="Удалить отсутствие">×</button>
         </div>`;
     }
@@ -386,12 +535,13 @@
     }
 
     async function loadCalendar() {
+      saveSettings();
       const request = ++calendarRequest;
       const months = [...selectedMonths], cc = $('#country').value;
       state.calendar = []; state.lastRows = [];
       $('#summary').innerHTML = ''; $('#projectTotals').innerHTML = ''; $('#detailsBody').innerHTML = ''; $('#detailsHead').innerHTML = '';
       $('#downloadCsv').disabled = true;
-      setStatus('Загружаю производственный календарь…');
+      setStatus('Загружаем календарь…');
       const results = await Promise.all(months.map(async month => {
         const b = monthBounds(month), cacheKey = `workcal:${cc}:${b.y}-${b.m}`;
         try {
@@ -411,7 +561,7 @@
       state.calendar = results.flatMap(x => x.days);
       const missing = results.filter(x => x.fallback).map(x => x.fallback);
       state.source = missing.length ? 'частично или полностью резервный ПН–ПТ' : 'isDayOff API / кэш';
-      setStatus(missing.length ? `Для ${missing.join(', ')} используется ПН–ПТ без праздников и переносов: API недоступен.` : `Календарь загружен (isDayOff / кэш). Месяцев: ${months.length}. Сокращённые дни учтены.`, missing.length ? 'warn' : 'good');
+      setStatus(missing.length ? `Не удалось загрузить календарь за ${missing.join(', ')}. Пока считаем по ПН–ПТ, без праздников и переносов.` : `Календарь готов. Месяцев: ${months.length}. Выходные и сокращённые дни учтены.`, missing.length ? 'warn' : 'good');
       $('#downloadCsv').disabled = false;
     }
 
@@ -468,6 +618,7 @@
     }
 
     function calculate(render=true) {
+      saveSettings();
       if (!state.calendar.length) return;
       refreshNormHours();
       const projects = getProjects();
@@ -502,12 +653,12 @@
 
     function renderSummary(x) {
       const balance = x.available - x.tracked;
-      const balanceText = Math.abs(balance) < .005 ? 'Баланс сходится' : balance > 0 ? `Не распределено ${hoursLabel(balance)}` : `Перегруз ${hoursLabel(-balance)}`;
+      const balanceText = Math.abs(balance) < .005 ? 'Все часы распределены' : balance > 0 ? `Не распределено ${hoursLabel(balance)}` : `Лишние ${hoursLabel(-balance)}`;
       $('#summary').innerHTML = `
         <div class="card"><div class="k">Рабочих дней</div><div class="v">${x.workingDays}</div><div class="s">До вычета отсутствий</div></div>
-        <div class="card"><div class="k">Норма периода</div><div class="v">${fmt.format(x.norm)}</div><div class="s">часов до отсутствий</div></div>
+        <div class="card"><div class="k">Всего по календарю</div><div class="v">${fmt.format(x.norm)}</div><div class="s">часов до отсутствий</div></div>
         <div class="card"><div class="k">Отсутствия</div><div class="v">${fmt.format(x.absence)}</div><div class="s">часов исключено</div></div>
-        <div class="card"><div class="k">Доступно</div><div class="v">${fmt.format(x.available)}</div><div class="s">часов для трекинга</div></div>
+        <div class="card"><div class="k">Доступно</div><div class="v">${fmt.format(x.available)}</div><div class="s">часов для проектов</div></div>
         <div class="card"><div class="k">По проектам</div><div class="v">${fmt.format(x.tracked)}</div><div class="s">${escapeHtml(balanceText)}</div></div>`;
     }
 
@@ -524,7 +675,7 @@
     }
 
     function renderDetails(rows, projects) {
-      $('#detailsHead').innerHTML = `<tr><th>Дата</th><th>День</th><th class="num">Норма</th><th class="num">Отсутствие</th><th class="num">Доступно</th><th class="num">Активно %</th>${projects.map(p=>`<th class="num">${escapeHtml(p.name)}</th>`).join('')}</tr>`;
+      $('#detailsHead').innerHTML = `<tr><th>Дата</th><th>День</th><th class="num">Норма</th><th class="num">Отсутствие</th><th class="num">Доступно</th><th class="num">Загрузка, %</th>${projects.map(p=>`<th class="num">${escapeHtml(p.name)}</th>`).join('')}</tr>`;
       $('#detailsBody').innerHTML = rows.map(r => {
         const d = parseLocal(r.date);
         const badge = r.kind==='off' ? '<span class="badge off">Выходной</span>' : r.kind==='short' ? '<span class="badge short">Сокращённый</span>' : r.absence>0 ? '<span class="badge abs">Отсутствие</span>' : '<span class="badge">Рабочий</span>';
@@ -541,7 +692,7 @@
     function downloadCsv() {
       if (!state.lastRows.length) return;
       const projects = state.lastProjects || [];
-      const head = ['Дата','День','Норма','Отсутствие','Доступно','Активно %',...projects.map(p=>p.name)];
+      const head = ['Дата','День','Норма','Отсутствие','Доступно','Загрузка, %',...projects.map(p=>p.name)];
       const lines = [head, ...state.lastRows.map(r=>[
         r.date, weekdayFmt.format(parseLocal(r.date)), r.norm, r.absence, r.available, r.activePct, ...r.allocations
       ])].map(row => row.map(v => `"${String(v).replaceAll('"','""')}"`).join(';'));
@@ -569,14 +720,32 @@
     $('#precisionDigits').onchange = () => { const input = $('#precisionDigits'); input.value = Math.max(0, Math.min(15, Math.trunc(Number(input.value) || 0))); calculate(false); };
     $('#toggleDetails').onclick = () => {
       const w = $('#detailsWrap'); w.classList.toggle('hidden');
-      $('#toggleDetails').textContent = w.classList.contains('hidden') ? 'Показать детализацию' : 'Скрыть детализацию';
+      $('#toggleDetails').textContent = w.classList.contains('hidden') ? 'Показать дни' : 'Скрыть дни';
     };
     $('#downloadCsv').onclick = downloadCsv;
 
+    $('#toggleCat').onclick = () => {
+      const cat = $('.work-cat img'); cat.hidden = !cat.hidden;
+      cat.style.display = cat.hidden ? 'none' : 'block';
+      $('#toggleCat').textContent = cat.hidden ? 'Показать кота' : 'Скрыть кота';
+    };
+    $('#resetSettings').onclick = () => {
+      settingsReady = false;
+      try { localStorage.removeItem(settingsKey); } catch (_) {}
+      const now = new Date();
+      selectedMonths = [`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`]; pickerYear = now.getFullYear();
+      $('#periodMode').value = 'single'; $('#country').value = 'ru'; $('#dayHours').value = 8;
+      $('#precision').value = 'rounded'; $('#precisionDigits').value = 3;
+      $('#precisionDigitsWrap').classList.remove('hidden');
+      $('#projects').innerHTML = ''; $('#absences').innerHTML = '';
+      setProjectCount(1,true); renderPicker(); settingsReady = true;
+      loadCalendar().then(() => calculate());
+    };
     // Начальный расчёт: текущий месяц, один проект, без отсутствий.
+    if (!restoreSettings()) setProjectCount(1, true);
     renderPicker();
-    setProjectCount(1, true);
-    bindRowEvents();
+    $('#precisionDigitsWrap').classList.toggle('hidden', $('#precision').value === 'full');
+    bindRowEvents(); settingsReady = true;
     loadCalendar().then(() => calculate());
   </script>
 </body>
