@@ -256,6 +256,9 @@
     .picker-done { width:100%; margin-top:12px; }
     #periodHint { font-size:11px; line-height:1.5; }
     @media(max-width:600px) { .period-picker { width:100%; padding:0; } .picker-popover { padding:12px; } }
+    .calculate-action { display:flex; justify-content:flex-end; margin:24px 0 16px; }
+    .calculate-action button { min-width:180px; }
+    @media(max-width:600px) { .calculate-action button { width:100%; } }
   </style>
 </head>
 <body>
@@ -270,7 +273,7 @@
     </section>
 
     <section class="panel">
-      <div class="panel-head"><h2>За какой период считаем</h2><div class="actions"><button id="resetSettings" class="secondary">Сбросить настройки</button><button id="calcBtn">Рассчитать</button></div></div><p id="settingsStatus" class="footnote" role="status">Настройки сохраняются в этом браузере.</p>
+      <div class="panel-head"><h2>За какой период считаем</h2><div class="actions"><button id="resetSettings" class="secondary">Сбросить настройки</button></div></div><p id="settingsStatus" class="footnote" role="status">Настройки сохраняются в этом браузере.</p>
       <details class="period-picker" id="periodPicker"><summary id="periodSummary">Выбрать период</summary><div class="picker-popover">
         <div class="picker-toolbar">
           <div><label for="periodMode">Период расчёта</label><select id="periodMode"><option value="single">Один месяц</option><option value="multiple">Несколько месяцев</option></select></div>
@@ -325,7 +328,7 @@
       <div class="footnote">Не работали весь день? Отметьте полный день. Отсутствовали несколько часов? Снимите отметку и укажите, сколько часов вычесть за каждый день.</div>
     </section>
 
-    <section id="summary" class="summary"></section>
+    <div class="calculate-action"><button id="calcBtn">Рассчитать</button></div>
 
     <section class="panel">
       <h2>Итог по проектам</h2>
@@ -340,6 +343,8 @@
         </table>
       </div>
     </section>
+
+    <section id="summary" class="summary"></section>
 
     <section class="panel">
       <div class="panel-head">
@@ -356,7 +361,7 @@
         </table>
       </div>
     </section>
-    <footer class="site-footer"><span>Ваши расчёты остаются в браузере.</span><a href="https://t.me/linturaven" target="_blank" rel="noopener noreferrer">Есть идея или нашли ошибку? Напишите в Telegram ↗</a><a href="https://github.com/linturaven/worktimecalc#readme">Как это работает ↗</a></footer>
+    <footer class="site-footer"><span>Ваши расчёты остаются в браузере.</span><a href="https://t.me/linturaven" target="_blank" rel="noopener noreferrer">Есть идея или нашли ошибку? Напишите в Telegram ↗</a><a href="https://github.com/linturaven/worktimecalc">Репозиторий ↗</a><a href="timecalc-offline.zip" download>Скачать для работы без интернета ↓</a></footer>
   </main>
 
   <script>
@@ -370,6 +375,7 @@
     const weekdayFmt = new Intl.DateTimeFormat('ru-RU', { weekday: 'short' });
 
     const state = { calendar: [], source: '', lastRows: [] };
+    const offlineCalendar = {"ru:2026-1": "1111111111100000110000011000001", "ru:2026-2": "1000001100000110000011100001", "ru:2026-3": "1000001110000110000011000001100", "ru:2026-4": "000110000011000001100000110002", "ru:2026-5": "1110000211100001100000110000011", "ru:2026-6": "000001100021110000011000001100", "ru:2026-7": "0001100000110000011000001100000", "ru:2026-8": "1100000110000011000001100000110", "ru:2026-9": "000011000001100000110000011000", "ru:2026-10": "0011000001100000110000011000001", "ru:2026-11": "102100110000011000001100000110", "ru:2026-12": "0000110000011000001100000110001"};
     const settingsKey = 'timecalc:settings:v1';
     let settingsReady = false;
     function saveSettings() {
@@ -548,6 +554,8 @@
           const raw = JSON.parse(localStorage.getItem(cacheKey));
           if (Array.isArray(raw) && raw.length === b.days && raw.every((d,i) => d.date === isoDate(b.y,b.m,i+1) && ['off','short','work'].includes(d.kind))) return {days:raw};
         } catch (_) {}
+        const bundled = offlineCalendar[`${cc}:${b.y}-${b.m}`];
+        if (bundled) return {days:[...bundled].map((code,i)=>dayFromCode(code,b.y,b.m,i+1))};
         try {
           const res = await fetch(`https://isdayoff.ru/api/getdata?year=${b.y}&month=${b.m}&cc=${encodeURIComponent(cc)}&pre=1`, {signal: AbortSignal.timeout(12000)});
           const text = (await res.text()).trim();
