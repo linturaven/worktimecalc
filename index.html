@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Калькулятор трекинга рабочего времени</title>
+  <style>
+    :root {
+      --bg: #f5f6f8;
+      --panel: #ffffff;
+      --text: #17191d;
+      --muted: #70757d;
+      --line: #e5e7eb;
+      --accent: #2563eb;
+      --accent-soft: #eff6ff;
+      --warn: #b45309;
+      --warn-soft: #fff7ed;
+      --bad: #b91c1c;
+      --bad-soft: #fef2f2;
+      --good: #047857;
+      --good-soft: #ecfdf5;
+      --shadow: 0 12px 32px rgba(17, 24, 39, .06);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.4;
+    }
+
+    .wrap { max-width: 1240px; margin: 0 auto; padding: 32px 20px 64px; }
+    .hero { display: flex; justify-content: space-between; gap: 24px; align-items: flex-end; margin-bottom: 24px; }
+    .hero h1 { margin: 0 0 8px; font-size: clamp(28px, 4vw, 44px); letter-spacing: -.035em; }
+    .hero p { margin: 0; color: var(--muted); max-width: 760px; }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+    .panel h2 { margin: 0 0 16px; font-size: 20px; }
+    .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+    .panel-head h2 { margin: 0; }
+
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px; }
+    .field { grid-column: span 3; min-width: 0; }
+    .field.wide { grid-column: span 6; }
+    label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em; }
+    input, select, button { font: inherit; }
+    input, select {
+      width: 100%; height: 44px; border: 1px solid var(--line); border-radius: 12px;
+      background: #fff; color: var(--text); padding: 0 12px; outline: none;
+    }
+    input:focus, select:focus { border-color: #93c5fd; box-shadow: 0 0 0 3px #dbeafe; }
+
+    button {
+      border: 0; border-radius: 12px; height: 42px; padding: 0 15px; cursor: pointer;
+      background: #111827; color: #fff; font-weight: 700;
+    }
+    button.secondary { background: #f3f4f6; color: #111827; border: 1px solid var(--line); }
+    button.ghost { background: transparent; color: var(--muted); padding: 0 10px; }
+    button.danger { background: transparent; color: var(--bad); border: 1px solid #fecaca; }
+
+    .status {
+      margin-top: 14px; display: flex; align-items: center; gap: 10px; padding: 11px 12px;
+      border-radius: 12px; background: var(--accent-soft); color: #1d4ed8; font-size: 14px;
+    }
+    .status.warn { background: var(--warn-soft); color: var(--warn); }
+    .status.bad { background: var(--bad-soft); color: var(--bad); }
+    .status.good { background: var(--good-soft); color: var(--good); }
+    .dot { width: 8px; height: 8px; border-radius: 999px; background: currentColor; flex: 0 0 auto; }
+
+    .rows { display: grid; gap: 10px; }
+    .project-row, .absence-row {
+      display: grid; gap: 10px; align-items: end; border: 1px solid var(--line); border-radius: 14px; padding: 12px;
+      background: #fafafa;
+    }
+    .project-row { grid-template-columns: 2fr 110px 1.2fr 1.2fr 44px; }
+    .absence-row { grid-template-columns: 1.2fr 1.2fr 1.5fr 110px 44px; }
+    .mini-label { font-size: 11px; font-weight: 700; color: var(--muted); margin: 0 0 5px; text-transform: uppercase; }
+    .remove { width: 44px; padding: 0; background: transparent; color: #9ca3af; border: 1px solid var(--line); }
+    .remove:hover { color: var(--bad); border-color: #fecaca; }
+
+    .check-wrap { height: 44px; display: flex; align-items: center; gap: 9px; padding: 0 12px; border: 1px solid var(--line); border-radius: 12px; background: white; }
+    .check-wrap input { width: 18px; height: 18px; }
+    .check-wrap span { font-size: 14px; }
+
+    .summary { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 18px; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; box-shadow: var(--shadow); }
+    .card .k { color: var(--muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+    .card .v { margin-top: 6px; font-size: 28px; font-weight: 800; letter-spacing: -.03em; }
+    .card .s { margin-top: 3px; color: var(--muted); font-size: 13px; }
+
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; }
+    table { width: 100%; border-collapse: collapse; min-width: 760px; }
+    th, td { text-align: left; padding: 12px 13px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    th { background: #f8fafc; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+    td { font-size: 14px; }
+    tr:last-child td { border-bottom: 0; }
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .muted { color: var(--muted); }
+    .badge { display: inline-flex; align-items: center; padding: 4px 8px; border-radius: 999px; font-size: 12px; background: #f3f4f6; color: #4b5563; }
+    .badge.short { background: var(--warn-soft); color: var(--warn); }
+    .badge.off { background: #f3f4f6; color: #9ca3af; }
+    .badge.abs { background: var(--bad-soft); color: var(--bad); }
+    .pct-bad { color: var(--bad); font-weight: 800; }
+    .pct-good { color: var(--good); font-weight: 800; }
+
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .footnote { color: var(--muted); font-size: 13px; margin-top: 14px; }
+    .hidden { display: none !important; }
+
+    @media (max-width: 900px) {
+      .field { grid-column: span 6; }
+      .summary { grid-template-columns: repeat(2, 1fr); }
+      .project-row { grid-template-columns: 1fr 90px; }
+      .project-row > :nth-child(3), .project-row > :nth-child(4) { grid-column: span 1; }
+      .project-row .remove { grid-column: 2; }
+      .absence-row { grid-template-columns: 1fr 1fr; }
+      .absence-row > :nth-child(3), .absence-row > :nth-child(4) { grid-column: span 1; }
+    }
+    @media (max-width: 600px) {
+      .wrap { padding: 22px 12px 48px; }
+      .hero { display: block; }
+      .field, .field.wide { grid-column: span 12; }
+      .summary { grid-template-columns: 1fr 1fr; }
+      .card:last-child { grid-column: span 2; }
+      .project-row, .absence-row { grid-template-columns: 1fr; }
+      .project-row > *, .absence-row > *, .project-row .remove { grid-column: 1 !important; }
+      .remove { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <div>
+        <h1>Рабочие часы по проектам</h1>
+        <p>Производственный календарь + проценты загрузки + периоды проектов + неоплачиваемые отсутствия. Расчёт идёт отдельно по каждому дню.</p>
+      </div>
+      <button id="calcBtn">Рассчитать</button>
+    </section>
+
+    <section class="panel">
+      <h2>Период и календарь</h2>
+      <div class="grid">
+        <div class="field">
+          <label for="month">Месяц</label>
+          <input id="month" type="month" value="2026-09" />
+        </div>
+        <div class="field">
+          <label for="country">Производственный календарь</label>
+          <select id="country">
+            <option value="ru" selected>Россия</option>
+            <option value="by">Беларусь</option>
+            <option value="kz">Казахстан</option>
+            <option value="uz">Узбекистан</option>
+            <option value="tr">Турция</option>
+            <option value="lv">Латвия</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="dayHours">Обычный рабочий день, ч</label>
+          <input id="dayHours" type="number" min="1" max="24" step="0.25" value="8" />
+        </div>
+        <div class="field">
+          <label for="projectCount">Количество проектов</label>
+          <input id="projectCount" type="number" min="1" max="20" step="1" value="3" />
+        </div>
+      </div>
+      <div id="apiStatus" class="status"><span class="dot"></span><span>Календарь ещё не загружен.</span></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Проекты</h2>
+        <button id="addProject" class="secondary">+ Проект</button>
+      </div>
+      <div id="projects" class="rows"></div>
+      <div class="footnote">Процент считается от доступных рабочих часов конкретного дня. Если сумма активных проектов в день меньше или больше 100%, это будет видно в детализации.</div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Отсутствия</h2>
+        <button id="addAbsence" class="secondary">+ Отсутствие</button>
+      </div>
+      <div id="absences" class="rows"></div>
+      <div class="footnote">Для полного дня вычитается фактическая норма этого дня. Для частичного отсутствия можно задать фиксированное число часов в день.</div>
+    </section>
+
+    <section id="summary" class="summary"></section>
+
+    <section class="panel">
+      <h2>Итог по проектам</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Проект</th><th class="num">%</th><th>Период</th><th class="num">Раб. дней</th><th class="num">Доступно в периоде</th><th class="num">Затрекать</th>
+            </tr>
+          </thead>
+          <tbody id="projectTotals"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Детализация по дням</h2>
+        <div class="actions">
+          <button id="toggleDetails" class="secondary">Скрыть детализацию</button>
+          <button id="downloadCsv" class="secondary">Скачать CSV</button>
+        </div>
+      </div>
+      <div id="detailsWrap" class="table-wrap">
+        <table id="detailsTable">
+          <thead id="detailsHead"></thead>
+          <tbody id="detailsBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const $ = (s, root=document) => root.querySelector(s);
+    const $$ = (s, root=document) => [...root.querySelectorAll(s)];
+    const fmt = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 });
+    const dateFmt = new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const weekdayFmt = new Intl.DateTimeFormat('ru-RU', { weekday: 'short' });
+
+    const state = { calendar: [], source: '', lastRows: [] };
+
+    function isoDate(y, m, d) {
+      return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    }
+    function parseLocal(iso) {
+      const [y,m,d] = iso.split('-').map(Number);
+      return new Date(y, m-1, d);
+    }
+    function monthBounds(value) {
+      const [y,m] = value.split('-').map(Number);
+      const days = new Date(y, m, 0).getDate();
+      return { y, m, days, start: isoDate(y,m,1), end: isoDate(y,m,days) };
+    }
+    function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+    function hoursLabel(v) { return `${fmt.format(Math.round(v*100)/100)} ч`; }
+    function escapeHtml(s='') { return String(s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+
+    function projectTemplate(i, data={}) {
+      const b = monthBounds($('#month').value);
+      return `
+        <div class="project-row" data-row="project">
+          <div><div class="mini-label">Название</div><input class="p-name" value="${escapeHtml(data.name ?? `Проект ${i+1}`)}" /></div>
+          <div><div class="mini-label">Загрузка, %</div><input class="p-pct" type="number" min="0" max="500" step="0.5" value="${data.pct ?? 0}" /></div>
+          <div><div class="mini-label">С</div><input class="p-from" type="date" value="${data.from ?? b.start}" /></div>
+          <div><div class="mini-label">По</div><input class="p-to" type="date" value="${data.to ?? b.end}" /></div>
+          <button class="remove" title="Удалить" aria-label="Удалить проект">×</button>
+        </div>`;
+    }
+
+    function absenceTemplate(data={}) {
+      const b = monthBounds($('#month').value);
+      const fallback = (b.y === 2026 && b.m === 9) ? '2026-09-25' : b.start;
+      const full = data.full ?? true;
+      return `
+        <div class="absence-row" data-row="absence">
+          <div><div class="mini-label">С</div><input class="a-from" type="date" value="${data.from ?? fallback}" /></div>
+          <div><div class="mini-label">По</div><input class="a-to" type="date" value="${data.to ?? fallback}" /></div>
+          <div><div class="mini-label">Тип</div><label class="check-wrap"><input class="a-full" type="checkbox" ${full?'checked':''}><span>Полный рабочий день</span></label></div>
+          <div><div class="mini-label">Часов/день</div><input class="a-hours" type="number" min="0" max="24" step="0.25" value="${data.hours ?? 8}" ${full?'disabled':''} /></div>
+          <button class="remove" title="Удалить" aria-label="Удалить отсутствие">×</button>
+        </div>`;
+    }
+
+    function setProjectCount(n, seed=false) {
+      n = clamp(Number(n)||1, 1, 20);
+      const root = $('#projects');
+      let rows = $$('[data-row="project"]', root);
+      while (rows.length < n) {
+        const i = rows.length;
+        const defaults = seed ? ([25,25,50][i] != null ? { pct:[25,25,50][i] } : { pct:0 }) : { pct:0 };
+        root.insertAdjacentHTML('beforeend', projectTemplate(i, defaults));
+        rows = $$('[data-row="project"]', root);
+      }
+      while (rows.length > n) { rows.at(-1).remove(); rows = $$('[data-row="project"]', root); }
+      $('#projectCount').value = n;
+      bindRowEvents();
+    }
+
+    function bindRowEvents() {
+      $$('.remove').forEach(btn => btn.onclick = () => {
+        const row = btn.closest('[data-row]');
+        const type = row.dataset.row;
+        row.remove();
+        if (type === 'project') $('#projectCount').value = $$('[data-row="project"]').length;
+        calculate(false);
+      });
+      $$('.a-full').forEach(ch => ch.onchange = () => {
+        const inp = $('.a-hours', ch.closest('.absence-row'));
+        inp.disabled = ch.checked;
+        calculate(false);
+      });
+      $$('input', $('#projects')).concat($$('input', $('#absences'))).forEach(inp => inp.oninput = () => calculate(false));
+    }
+
+    function setStatus(text, kind='') {
+      const el = $('#apiStatus');
+      el.className = `status ${kind}`.trim();
+      el.innerHTML = `<span class="dot"></span><span>${escapeHtml(text)}</span>`;
+    }
+
+    async function loadCalendar() {
+      const b = monthBounds($('#month').value);
+      const cc = $('#country').value;
+      const cacheKey = `workcal:${cc}:${b.y}-${b.m}`;
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        try {
+          const raw = JSON.parse(cached);
+          if (Array.isArray(raw) && raw.length === b.days) {
+            state.calendar = raw;
+            state.source = 'API (кэш браузера)';
+            setStatus(`Производственный календарь загружен из кэша: ${b.m}.${b.y}.`, 'good');
+            return;
+          }
+        } catch (_) {}
+      }
+
+      setStatus('Загружаю производственный календарь isDayOff…');
+      try {
+        const url = `https://isdayoff.ru/api/getdata?year=${b.y}&month=${b.m}&cc=${encodeURIComponent(cc)}&pre=1`;
+        const res = await fetch(url, { headers: { 'Accept': 'text/plain' } });
+        const text = (await res.text()).trim();
+        if (!res.ok || text.length !== b.days || !/^[01248]+$/.test(text)) throw new Error(`Некорректный ответ API: HTTP ${res.status}, ${text}`);
+        state.calendar = [...text].map((code, idx) => dayFromCode(code, b.y, b.m, idx+1));
+        state.source = 'isDayOff API';
+        localStorage.setItem(cacheKey, JSON.stringify(state.calendar));
+        setStatus(`Календарь isDayOff загружен: ${b.m}.${b.y}. Сокращённые дни учтены.`, 'good');
+      } catch (err) {
+        state.calendar = fallbackCalendar(b.y, b.m, b.days);
+        state.source = 'резервный ПН–ПТ';
+        setStatus('API недоступен. Используется резервный календарь ПН–ПТ без официальных праздников и переносов.', 'warn');
+        console.warn(err);
+      }
+    }
+
+    function dayFromCode(code, y, m, d) {
+      const normal = Number($('#dayHours').value) || 8;
+      const date = isoDate(y,m,d);
+      if (code === '1' || code === '8') return { date, code, kind:'off', norm:0 };
+      if (code === '2') return { date, code, kind:'short', norm:Math.max(0, normal - 1) };
+      return { date, code, kind:'work', norm:normal };
+    }
+
+    function fallbackCalendar(y,m,days) {
+      const normal = Number($('#dayHours').value) || 8;
+      return Array.from({length:days}, (_,i) => {
+        const d=i+1, dt = new Date(y,m-1,d), weekend = dt.getDay()===0 || dt.getDay()===6;
+        return { date:isoDate(y,m,d), code:weekend?'1':'0', kind:weekend?'off':'work', norm:weekend?0:normal };
+      });
+    }
+
+    function refreshNormHours() {
+      const normal = Number($('#dayHours').value) || 8;
+      state.calendar = state.calendar.map(d => ({...d, norm: d.kind==='off' ? 0 : d.kind==='short' ? Math.max(0,normal-1) : normal }));
+    }
+
+    function getProjects() {
+      return $$('[data-row="project"]').map((r, i) => ({
+        id:i,
+        name: $('.p-name',r).value.trim() || `Проект ${i+1}`,
+        pct: Math.max(0, Number($('.p-pct',r).value)||0),
+        from: $('.p-from',r).value,
+        to: $('.p-to',r).value
+      }));
+    }
+
+    function getAbsences() {
+      return $$('[data-row="absence"]').map(r => ({
+        from: $('.a-from',r).value,
+        to: $('.a-to',r).value,
+        full: $('.a-full',r).checked,
+        hours: Math.max(0, Number($('.a-hours',r).value)||0)
+      })).filter(a => a.from && a.to);
+    }
+
+    function isBetween(date, from, to) { return (!from || date >= from) && (!to || date <= to); }
+
+    function absenceHoursFor(day, absences) {
+      let hours = 0;
+      for (const a of absences) {
+        const lo = a.from <= a.to ? a.from : a.to;
+        const hi = a.from <= a.to ? a.to : a.from;
+        if (isBetween(day.date, lo, hi) && day.norm > 0) hours += a.full ? day.norm : Math.min(day.norm, a.hours);
+      }
+      return Math.min(day.norm, hours);
+    }
+
+    function calculate(render=true) {
+      if (!state.calendar.length) return;
+      refreshNormHours();
+      const projects = getProjects();
+      const absences = getAbsences();
+      const totals = projects.map(p => ({...p, days:0, available:0, track:0}));
+      const rows = state.calendar.map(day => {
+        const abs = absenceHoursFor(day, absences);
+        const available = Math.max(0, day.norm - abs);
+        const allocations = projects.map((p,i) => {
+          const active = isBetween(day.date, p.from, p.to);
+          const hours = active ? available * p.pct / 100 : 0;
+          if (active && day.norm > 0) totals[i].days++;
+          if (active) totals[i].available += available;
+          totals[i].track += hours;
+          return hours;
+        });
+        const activePct = projects.reduce((s,p) => s + (isBetween(day.date,p.from,p.to) ? p.pct : 0), 0);
+        return { ...day, absence:abs, available, allocations, activePct, tracked:allocations.reduce((a,b)=>a+b,0) };
+      });
+      state.lastRows = rows;
+      state.lastProjects = projects;
+
+      const norm = rows.reduce((s,d)=>s+d.norm,0);
+      const absence = rows.reduce((s,d)=>s+d.absence,0);
+      const available = rows.reduce((s,d)=>s+d.available,0);
+      const tracked = rows.reduce((s,d)=>s+d.tracked,0);
+      const workingDays = rows.filter(d=>d.norm>0).length;
+      renderSummary({norm,absence,available,tracked,workingDays});
+      renderProjectTotals(totals);
+      renderDetails(rows, projects);
+    }
+
+    function renderSummary(x) {
+      const balance = x.available - x.tracked;
+      const balanceText = Math.abs(balance) < .005 ? 'Баланс сходится' : balance > 0 ? `Не распределено ${hoursLabel(balance)}` : `Перегруз ${hoursLabel(-balance)}`;
+      $('#summary').innerHTML = `
+        <div class="card"><div class="k">Рабочих дней</div><div class="v">${x.workingDays}</div><div class="s">По производственному календарю</div></div>
+        <div class="card"><div class="k">Норма месяца</div><div class="v">${fmt.format(x.norm)}</div><div class="s">часов до отсутствий</div></div>
+        <div class="card"><div class="k">Отсутствия</div><div class="v">${fmt.format(x.absence)}</div><div class="s">часов исключено</div></div>
+        <div class="card"><div class="k">Доступно</div><div class="v">${fmt.format(x.available)}</div><div class="s">часов для трекинга</div></div>
+        <div class="card"><div class="k">По проектам</div><div class="v">${fmt.format(x.tracked)}</div><div class="s">${escapeHtml(balanceText)}</div></div>`;
+    }
+
+    function renderProjectTotals(totals) {
+      $('#projectTotals').innerHTML = totals.map(t => `
+        <tr>
+          <td><strong>${escapeHtml(t.name)}</strong></td>
+          <td class="num">${fmt.format(t.pct)}%</td>
+          <td>${t.from ? dateFmt.format(parseLocal(t.from)) : '—'} — ${t.to ? dateFmt.format(parseLocal(t.to)) : '—'}</td>
+          <td class="num">${t.days}</td>
+          <td class="num">${hoursLabel(t.available)}</td>
+          <td class="num"><strong>${hoursLabel(t.track)}</strong></td>
+        </tr>`).join('');
+    }
+
+    function renderDetails(rows, projects) {
+      $('#detailsHead').innerHTML = `<tr><th>Дата</th><th>День</th><th class="num">Норма</th><th class="num">Отсутствие</th><th class="num">Доступно</th><th class="num">Активно %</th>${projects.map(p=>`<th class="num">${escapeHtml(p.name)}</th>`).join('')}</tr>`;
+      $('#detailsBody').innerHTML = rows.map(r => {
+        const d = parseLocal(r.date);
+        const badge = r.kind==='off' ? '<span class="badge off">Выходной</span>' : r.kind==='short' ? '<span class="badge short">Сокращённый</span>' : r.absence>0 ? '<span class="badge abs">Отсутствие</span>' : '<span class="badge">Рабочий</span>';
+        const pctClass = r.available>0 ? (Math.abs(r.activePct-100)<.001 ? 'pct-good' : 'pct-bad') : '';
+        return `<tr>
+          <td>${dateFmt.format(d)}</td><td>${weekdayFmt.format(d)} ${badge}</td>
+          <td class="num">${fmt.format(r.norm)}</td><td class="num">${r.absence?fmt.format(r.absence):'—'}</td><td class="num">${fmt.format(r.available)}</td>
+          <td class="num ${pctClass}">${r.available>0 ? fmt.format(r.activePct)+'%' : '—'}</td>
+          ${r.allocations.map(h=>`<td class="num">${h?fmt.format(h):'—'}</td>`).join('')}
+        </tr>`;
+      }).join('');
+    }
+
+    function resetProjectPeriodsToMonth() {
+      const b = monthBounds($('#month').value);
+      $$('.p-from').forEach(x=>x.value=b.start);
+      $$('.p-to').forEach(x=>x.value=b.end);
+      $$('.a-from').forEach(x=>x.value=b.start);
+      $$('.a-to').forEach(x=>x.value=b.start);
+    }
+
+    function downloadCsv() {
+      if (!state.lastRows.length) return;
+      const projects = state.lastProjects || [];
+      const head = ['Дата','День','Норма','Отсутствие','Доступно','Активно %',...projects.map(p=>p.name)];
+      const lines = [head, ...state.lastRows.map(r=>[
+        r.date, weekdayFmt.format(parseLocal(r.date)), r.norm, r.absence, r.available, r.activePct, ...r.allocations
+      ])].map(row => row.map(v => `"${String(v).replaceAll('"','""')}"`).join(';'));
+      const blob = new Blob(['\ufeff'+lines.join('\n')], {type:'text/csv;charset=utf-8'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `worktime-${$('#month').value}.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    $('#addProject').onclick = () => {
+      const n = $$('[data-row="project"]').length + 1;
+      if (n>20) return;
+      $('#projects').insertAdjacentHTML('beforeend', projectTemplate(n-1,{pct:0}));
+      $('#projectCount').value=n; bindRowEvents(); calculate(false);
+    };
+    $('#projectCount').onchange = e => { setProjectCount(e.target.value); calculate(false); };
+    $('#addAbsence').onclick = () => { $('#absences').insertAdjacentHTML('beforeend', absenceTemplate()); bindRowEvents(); calculate(false); };
+    $('#calcBtn').onclick = async () => { await loadCalendar(); calculate(); };
+    $('#month').onchange = async () => { resetProjectPeriodsToMonth(); await loadCalendar(); calculate(); };
+    $('#country').onchange = async () => { await loadCalendar(); calculate(); };
+    $('#dayHours').oninput = () => calculate(false);
+    $('#toggleDetails').onclick = () => {
+      const w = $('#detailsWrap'); w.classList.toggle('hidden');
+      $('#toggleDetails').textContent = w.classList.contains('hidden') ? 'Показать детализацию' : 'Скрыть детализацию';
+    };
+    $('#downloadCsv').onclick = downloadCsv;
+
+    // Стартовые данные из текущей задачи: 25% + 25% + 50% и отсутствие 25.09.2026.
+    setProjectCount(3, true);
+    $('#absences').insertAdjacentHTML('beforeend', absenceTemplate({from:'2026-09-25',to:'2026-09-25',full:true}));
+    bindRowEvents();
+    loadCalendar().then(() => calculate());
+  </script>
+</body>
+</html>
